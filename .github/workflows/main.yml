@@ -150,7 +150,7 @@ jobs:
           xcrun notarytool submit ./myWitWallet.dmg --apple-id "$EM" --password "$PD" --team-id "$TID"
 
       - name: Verify Notarization
-        run: spctl -a -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
+        run: spctl -a -vvvv ./myWitWallet.dmg
 
       - uses: actions/upload-artifact@v3
         with:
