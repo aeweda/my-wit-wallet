@@ -120,7 +120,7 @@ jobs:
         env:
           IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: |
-          codesign --force --deep -s $IDENTITY_ID ./build/macos/Build/Products/Release/myWitWallet.app -v
+          codesign --options=runtime --force --deep -s $IDENTITY_ID ./build/macos/Build/Products/Release/myWitWallet.app -v
 
       - name: Verify Sign
         run: codesign --verify -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
@@ -137,9 +137,12 @@ jobs:
             --icon "myWitWallet.app" 260 250 \
             --hide-extension "myWitWallet.app" \
             --app-drop-link 540 250 \
-            --hdiutil-verbose \
+            --hdiutil-quite \
             "myWitWallet.dmg" \
             "./build/macos/Build/Products/Release/myWitWallet.app"
+
+      - name: Sign .dmg
+        run: codesign --options=runtime --force --deep -s $IDENTITY_ID ./myWitWallet.dmg -v
 
       - name: Notarize
         env:
@@ -148,10 +151,14 @@ jobs:
           TID: ${{ secrets.TEAM_ID }}
         run: |
           xcrun notarytool submit ./myWitWallet.dmg --apple-id "$EM" --password "$PD" --team-id "$TID" --wait
-        # cat output | grep id | head -1 | cut -d ":" -f2 | tr -d ' '
 
-      - name: Verify Notarization
-        run: spctl -a -vvvv ./myWitWallet.dmg
+      - name: Staple
+        run: xcrun stapler staple ./myWitWallet.dmg
+
+      - name: Verify Notarization & Stapling
+        run: |
+          spctl --assess -vvv --type install ./myWitWallet.dmg
+          xcrun stapler validate ./myWitWallet.dmg
 
       - uses: actions/upload-artifact@v3
         with:
