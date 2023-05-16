@@ -1,83 +1,85 @@
+
 name: Release
 
 on:
   push:
-    tags:
-      - '*'
+    branches:
+      - "main"
 
 jobs:
-  Windows:
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v3
+  # Windows:
+  #   runs-on: windows-2022
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: create .env
-        run: Copy-Item ".\.env_example" -Destination ".\.env"
+  #     - name: create .env
+  #       run: Copy-Item ".\.env_example" -Destination ".\.env"
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'beta'
-          cache: true
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: 'beta'
+  #         cache: true
 
-      - name: Install project dependencies
-        run: flutter pub get
+  #     - name: Install project dependencies
+  #       run: flutter pub get
 
-      - name: Doctor
-        run: flutter doctor
+  #     - name: Doctor
+  #       run: flutter doctor
 
-      - name: Binary
-        run: flutter build windows
+  #     - name: Binary
+  #       run: flutter build windows
 
-      - name: Archive build
-        run: |
-          Move-Item '.\build\windows\runner\Release' '.\light-wallet'
-          Compress-Archive -Path '.\light-wallet' -DestinationPath '.\witnet-light-wallet-windows.zip' -Force
+  #     - name: Archive build
+  #       run: |
+  #         Move-Item '.\build\windows\runner\Release' '.\light-wallet'
+  #         Compress-Archive -Path '.\light-wallet' -DestinationPath '.\witnet-light-wallet-windows.zip' -Force
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: windows
-          path: .\witnet-light-wallet-windows.zip
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: windows
+  #         path: .\witnet-light-wallet-windows.zip
 
-  Linux:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
+  # Linux:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: create .env
-        run: cp ./.env_example ./.env
+  #     - name: create .env
+  #       run: cp ./.env_example ./.env
 
-      - uses: subosito/flutter-action@v2
-        with:
-          architecture: x64
-          channel: 'beta'
-          cache: true
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         architecture: x64
+  #         channel: 'beta'
+  #         cache: true
 
-      - name: Install project dependencies
-        run: flutter pub get
+  #     - name: Install project dependencies
+  #       run: flutter pub get
 
-      - name: install needed dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y ninja-build libgtk-3-dev
+  #     - name: install needed dependencies
+  #       run: sudo apt-get update -y && sudo apt-get install -y ninja-build libgtk-3-dev
 
-      - name: Doctor
-        run: flutter doctor
+  #     - name: Doctor
+  #       run: flutter doctor
 
-      - name: Binary
-        run: flutter build linux --release
+  #     - name: Binary
+  #       run: flutter build linux --release
 
-      - name: LDD
-        run: ldd build/linux/x64/release/bundle/my_wit_wallet
+  #     - name: LDD
+  #       run: ldd build/linux/x64/release/bundle/witnet_wallet
 
-      - name: Archive Build
-        run: |
-          mv ./build/linux/x64/release/bundle ./light-wallet
-          tar czvf witnet-light-wallet-linux.tar.gz ./light-wallet
+  #     - name: Archive Build
+  #       run: |
+  #         mv ./build/linux/x64/release/bundle ./light-wallet
+  #         tar czvf witnet-light-wallet-linux.tar.gz ./light-wallet
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: linux
-          path: ./witnet-light-wallet-linux.tar.gz
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: linux
+  #         path: ./witnet-light-wallet-linux.tar.gz
 
   MacOs:
+    environment: main
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -88,7 +90,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           architecture: x64
-          channel: 'beta'
+          channel: 'stable'
           cache: true
 
       - name: Install project dependencies
@@ -100,53 +102,106 @@ jobs:
       - name: Binary
         run: flutter build macos --release
 
-      - name: Archive Build
+      - name: Prepare Signature/cert
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          KEY_CHAIN_PWD: ${{ secrets.KEY_CHAIN_PWD }}
         run: |
-          mkdir light-wallet
-          mv ./build/macos/Build/Products/Release/my_wit_wallet.app ./light-wallet/
-          tar czvf witnet-light-wallet-darwin.tar.gz ./light-wallet
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p $KEY_CHAIN_PWD build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p $KEY_CHAIN_PWD build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $KEY_CHAIN_PWD build.keychain
+          security find-identity
+
+      - name: Sign
+        env:
+          IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
+        run: |
+          /usr/bin/codesign --force --deep -s $IDENTITY_ID ./build/macos/Build/Products/Release/witnet_wallet.app -v
+
+      - name: Verify Sign
+        run: codesign --verify -vvvv ./build/macos/Build/Products/Release/witnet_wallet.app
+
+      - name: Notarize
+        env:
+          EMAIL: ${{ secrets.APPLE_EMAIL }}
+          PWD: ${{ secrets.APPLE_APP_PASSWORD }}
+          KEY_CHAIN_PWD: ${{ secrets.KEY_CHAIN_PWD }}
+        run: |
+          xcrun altool --notarize-app \
+             --primary-bundle-id "com.witnet.myWitWallet" \
+             --username "$EMAIL" \
+             --password "$PWD" \
+             --asc-provider "$KEY_CHAIN_PWD" \
+             --file "./build/macos/Build/Products/Release/witnet_wallet.app"
+
+      - name: Verify Notarization
+        run: spctl -a -vvvv ./build/macos/Build/Products/Release/witnet_wallet.app
+
+      - name: Verify Notarization Again
+        run: xcrun stapler validate ./build/macos/Build/Products/Release/witnet_wallet.app
+
+      # - name: Create .dmg
+      #   run: |
+      #     brew install create-dmg
+      #     mv ./build/macos/Build/Products/Release/witnet_wallet.app ./
+      #     create-dmg \
+      #     --volname "witnet_wallet" \
+      #     --window-pos 200 120 \
+      #     --window-size 800 529 \
+      #     --icon-size 130 \
+      #     --text-size 14 \
+      #     --icon "witnet_wallet.app" 260 250 \
+      #     --hide-extension "witnet_wallet.app" \
+      #     --app-drop-link 540 250 \
+      #     --hdiutil-quiet \
+      #     "witnet_wallet.dmg" \
+      #     "witnet_wallet.app"
 
       - uses: actions/upload-artifact@v3
         with:
           name: macos
-          path: ./witnet-light-wallet-darwin.tar.gz
+          path: ./build/macos/Build/Products/Release
 
-  Android:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
+  # Android:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: create .env
-        run: cp ./.env_example ./.env
+  #     - name: create .env
+  #       run: cp ./.env_example ./.env
 
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-          cache: 'gradle'
+  #     - uses: actions/setup-java@v3
+  #       with:
+  #         distribution: 'zulu'
+  #         java-version: '11'
+  #         cache: 'gradle'
 
-      - uses: subosito/flutter-action@v2
-        with:
-          architecture: x64
-          channel: 'beta'
-          cache: true
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         architecture: x64
+  #         channel: 'beta'
+  #         cache: true
 
-      - name: Install project dependencies
-        run: flutter pub get
+  #     - name: Install project dependencies
+  #       run: flutter pub get
 
-      - name: Doctor
-        run: flutter doctor
+  #     - name: Doctor
+  #       run: flutter doctor
 
-      - name: Binary
-        run: flutter build apk
+  #     - name: Binary
+  #       run: flutter build apk
 
-      - name: Prepare apk
-        run: mv ./build/app/outputs/flutter-apk/app-release.apk ./witnet-light-wallet.apk
+  #     - name: Prepare apk
+  #       run: mv ./build/app/outputs/flutter-apk/app-release.apk ./witnet-light-wallet.apk
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: android
-          path: ./witnet-light-wallet.apk
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: android
+  #         path: ./witnet-light-wallet.apk
 
   # IOS:
   #   runs-on: macos-latest
@@ -171,37 +226,37 @@ jobs:
   #     - name: Binary
   #       run: flutter build ios --release --no-codesign
 
-  Release:
-    needs: [Windows, Linux, MacOs, Android]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v3
+  # Release:
+  #   needs: [Windows, Linux, MacOs, Android]
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      # Download All Artifacts
-      - uses: actions/download-artifact@v3
-        with:
-          path: release/
+  #     # Download All Artifacts
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         path: release/
 
-      - name: Insert Tag
-        run: |
-          TAG=${{github.ref_name}}
-          sed -i "s/LATEST_VERSION/$TAG/g" RELEASE.md
+  #     - name: Insert Tag
+  #       run: |
+  #         TAG=${{github.ref_name}}
+  #         sed -i "s/LATEST_VERSION/$TAG/g" RELEASE.md
 
-      - name: Organize Releases
-        run: |
-          cd release
-          mv android/* .
-          mv linux/* .
-          mv macos/* .
-          mv windows/* .
-          rm -rf android linux macos windows
+  #     - name: Organize Releases
+  #       run: |
+  #         cd release
+  #         mv android/* .
+  #         mv linux/* .
+  #         mv macos/* .
+  #         mv windows/* .
+  #         rm -rf android linux macos windows
 
-      - name: Publish Github Release
-        uses: ncipollo/release-action@v1
-        with:
-          name: "Light Wallet ${{github.ref_name}}"
-          artifacts: "./release/*"
-          bodyFile: "RELEASE.md"
-          artifactErrorsFailBuild: true
+  #     - name: Publish Github Release
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         name: "Light Wallet ${{github.ref_name}}"
+  #         artifacts: "./release/*"
+  #         bodyFile: "RELEASE.md"
+  #         artifactErrorsFailBuild: true
