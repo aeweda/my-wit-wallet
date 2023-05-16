@@ -147,7 +147,7 @@ jobs:
           PWD: ${{ secrets.APPLE_APP_PASSWORD }}
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
-          xcrun notarytool submit ./myWitWallet.dmg --apple-id $EMAIL --password $PWD --team-id $TEAM_ID
+          xcrun notarytool submit ./myWitWallet.dmg --apple-id "$EMAIL" --password "$PWD" --team-id "$TEAM_ID"
 
       - name: Verify Notarization
         run: spctl -a -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
