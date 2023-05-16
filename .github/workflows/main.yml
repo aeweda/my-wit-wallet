@@ -120,51 +120,45 @@ jobs:
         env:
           IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: |
-          /usr/bin/codesign --force --deep -s $IDENTITY_ID ./build/macos/Build/Products/Release/myWitWallet.app -v
+          codesign --force --deep -s $IDENTITY_ID ./build/macos/Build/Products/Release/myWitWallet.app -v
 
       - name: Verify Sign
         run: codesign --verify -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
+
+      - name: Create .dmg
+        run: |
+          brew install create-dmg
+          create-dmg \
+          --volname "myWitWallet" \
+          --window-pos 200 120 \
+          --window-size 800 529 \
+          --icon-size 130 \
+          --text-size 14 \
+          --icon "myWitWallet.app" 260 250 \
+          --hide-extension "myWitWallet.app" \
+          --app-drop-link 540 250 \
+          --hdiutil-verbose \
+          "myWitWallet.dmg" \
+          "./build/macos/Build/Products/Release/myWitWallet.app"
 
       - name: Notarize
         env:
           EMAIL: ${{ secrets.APPLE_EMAIL }}
           PWD: ${{ secrets.APPLE_APP_PASSWORD }}
-          KEY_CHAIN_PWD: ${{ secrets.KEY_CHAIN_PWD }}
+          IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: |
-          xcrun altool --notarize-app \
-             --primary-bundle-id "com.witnet.myWitWallet" \
-             --username "$EMAIL" \
-             --password "$PWD" \
-             --asc-provider "$KEY_CHAIN_PWD" \
-             --file "./build/macos/Build/Products/Release/myWitWallet.app"
+          xcrun notarytool submit ./myWitWallet.dmg \
+             --apple-id $EMAIL \
+             --password $PWD \
+             --team-id $IDENTITY_ID
 
       - name: Verify Notarization
         run: spctl -a -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
 
-      - name: Verify Notarization Again
-        run: xcrun stapler validate ./build/macos/Build/Products/Release/myWitWallet.app
-
-      # - name: Create .dmg
-      #   run: |
-      #     brew install create-dmg
-      #     mv ./build/macos/Build/Products/Release/witnet_wallet.app ./
-      #     create-dmg \
-      #     --volname "witnet_wallet" \
-      #     --window-pos 200 120 \
-      #     --window-size 800 529 \
-      #     --icon-size 130 \
-      #     --text-size 14 \
-      #     --icon "witnet_wallet.app" 260 250 \
-      #     --hide-extension "witnet_wallet.app" \
-      #     --app-drop-link 540 250 \
-      #     --hdiutil-quiet \
-      #     "witnet_wallet.dmg" \
-      #     "witnet_wallet.app"
-
       - uses: actions/upload-artifact@v3
         with:
           name: macos
-          path: ./build/macos/Build/Products/Release
+          path: ./myWitWallet.dmg
 
   # Android:
   #   runs-on: ubuntu-22.04
