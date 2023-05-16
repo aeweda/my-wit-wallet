@@ -147,7 +147,8 @@ jobs:
           PD: ${{ secrets.APP_PASSWORD }}
           TID: ${{ secrets.TEAM_ID }}
         run: |
-          xcrun notarytool submit ./myWitWallet.dmg --apple-id "$EM" --password "$PD" --team-id "$TID"
+          xcrun notarytool submit ./myWitWallet.dmg --apple-id "$EM" --password "$PD" --team-id "$TID" --wait
+        # cat output | grep id | head -1 | cut -d ":" -f2 | tr -d ' '
 
       - name: Verify Notarization
         run: spctl -a -vvvv ./myWitWallet.dmg
