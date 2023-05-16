@@ -123,6 +123,8 @@ jobs:
           codesign --options=runtime --force --deep -s $IDENTITY_ID ./build/macos/Build/Products/Release/myWitWallet.app -v
 
       - name: Verify Sign
+        env:
+          IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: codesign --verify -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
 
       - name: Create .dmg
@@ -142,6 +144,8 @@ jobs:
             "./build/macos/Build/Products/Release/myWitWallet.app"
 
       - name: Sign .dmg
+        env:
+          IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: codesign --options=runtime --force --deep -s $IDENTITY_ID ./myWitWallet.dmg -v
 
       - name: Notarize
