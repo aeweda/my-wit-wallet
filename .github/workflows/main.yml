@@ -137,7 +137,7 @@ jobs:
             --icon "myWitWallet.app" 260 250 \
             --hide-extension "myWitWallet.app" \
             --app-drop-link 540 250 \
-            --hdiutil-quite \
+            --hdiutil-quiet \
             "myWitWallet.dmg" \
             "./build/macos/Build/Products/Release/myWitWallet.app"
 
