@@ -171,43 +171,43 @@ jobs:
           name: macos
           path: ./myWitWallet.dmg
 
-  Android:
-    environment: main
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
+  # Android:
+  #   environment: main
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: create .env
-        run: cp ./.env_example ./.env
+  #     - name: create .env
+  #       run: cp ./.env_example ./.env
 
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-          cache: 'gradle'
+  #     - uses: actions/setup-java@v3
+  #       with:
+  #         distribution: 'zulu'
+  #         java-version: '11'
+  #         cache: 'gradle'
 
-      - uses: subosito/flutter-action@v2
-        with:
-          architecture: x64
-          channel: 'stable'
-          cache: true
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         architecture: x64
+  #         channel: 'stable'
+  #         cache: true
 
-      - name: Install project dependencies
-        run: flutter pub get
+  #     - name: Install project dependencies
+  #       run: flutter pub get
 
-      - name: Doctor
-        run: flutter doctor
+  #     - name: Doctor
+  #       run: flutter doctor
 
-      - name: Binary
-        run: flutter build apk
+  #     - name: Binary
+  #       run: flutter build apk
 
-      - name: Prepare apk
-        run: mv ./build/app/outputs/flutter-apk/app-release.apk ./myWitWallet.apk
+  #     - name: Prepare apk
+  #       run: mv ./build/app/outputs/flutter-apk/app-release.apk ./myWitWallet.apk
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: android
-          path: ./myWitWallet.apk
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: android
+  #         path: ./myWitWallet.apk
 
   # IOS:
   #   runs-on: macos-latest
@@ -233,7 +233,7 @@ jobs:
   #       run: flutter build ios --release --no-codesign
 
   Release:
-    needs: [Windows, Linux, MacOs, Android]
+    needs: [Windows, Linux, MacOs]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -256,8 +256,7 @@ jobs:
           mv windows/* .
           mv linux/* .
           mv macos/* .
-          mv android/* .
-          rm -rf android linux macos windows
+          rm -rf linux macos windows
 
       - name: Publish Github Release
         uses: ncipollo/release-action@v1
