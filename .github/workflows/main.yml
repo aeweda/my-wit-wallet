@@ -235,6 +235,7 @@ jobs:
   Release:
     needs: [Windows, Linux, MacOs]
     runs-on: ubuntu-latest
+    environment: main
     permissions:
       contents: write
     steps:
