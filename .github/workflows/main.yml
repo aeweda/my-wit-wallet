@@ -8,6 +8,7 @@ on:
 
 jobs:
   Windows:
+    environment: main
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
@@ -40,6 +41,7 @@ jobs:
           path: .\myWitWallet-windows.zip
 
   Linux:
+    environment: main
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -66,7 +68,7 @@ jobs:
         run: flutter build linux --release
 
       - name: LDD
-        run: ldd build/linux/x64/release/bundle/witnet_wallet
+        run: ldd build/linux/x64/release/bundle/myWitWallet
 
       - name: Archive Build
         run: |
@@ -170,6 +172,7 @@ jobs:
           path: ./myWitWallet.dmg
 
   Android:
+    environment: main
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
