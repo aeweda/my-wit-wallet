@@ -8,7 +8,6 @@ on:
 
 jobs:
   Windows:
-    environment: main
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
@@ -41,7 +40,6 @@ jobs:
           path: .\myWitWallet-windows.zip
 
   Linux:
-    environment: main
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -81,7 +79,7 @@ jobs:
           path: ./myWitWallet-linux.tar.gz
 
   MacOs:
-    environment: main
+    environment: Release
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -124,10 +122,13 @@ jobs:
         run: |
           codesign --options=runtime --force --deep -s $IDENTITY_ID ./build/macos/Build/Products/Release/myWitWallet.app -v
 
-      - name: Verify Sign
+      - name: Verify Sign with codesign
         env:
           IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: codesign --verify -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
+
+      - name: Verify Sign with spctl
+        run: spctl -a -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
 
       - name: Create .dmg
         run: |
@@ -152,11 +153,11 @@ jobs:
 
       - name: Notarize
         env:
-          EM: ${{ secrets.APP_EMAIL }}
-          PD: ${{ secrets.APP_PASSWORD }}
-          TID: ${{ secrets.TEAM_ID }}
+          APPLE_EMAIL: ${{ secrets.APPLE_EMAIL }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: |
-          xcrun notarytool submit ./myWitWallet.dmg --apple-id "$EM" --password "$PD" --team-id "$TID" --wait
+          xcrun notarytool submit ./myWitWallet.dmg --apple-id "$APPLE_EMAIL" --password "$APPLE_PASSWORD" --team-id "$IDENTITY_ID" --wait
 
       - name: Staple
         run: xcrun stapler staple ./myWitWallet.dmg
@@ -172,7 +173,6 @@ jobs:
           path: ./myWitWallet.dmg
 
   # Android:
-  #   environment: main
   #   runs-on: ubuntu-22.04
   #   steps:
   #     - uses: actions/checkout@v3
@@ -235,7 +235,6 @@ jobs:
   Release:
     needs: [Windows, Linux, MacOs]
     runs-on: ubuntu-latest
-    environment: main
     permissions:
       contents: write
     steps:
