@@ -207,6 +207,8 @@ jobs:
       - name: Flutter Doctor
         run: flutter doctor
 
+      # echo $JKS > encoded.key
+      # cat encoded.key | base64 -d > upload-keystore.jks
       - name: Add Credentials / Keys
         working-directory: android
         env:
@@ -214,8 +216,7 @@ jobs:
           GPSA: ${{ secrets.ANDROID_GOOGLE_PLAY_KEY }}
           KPROP: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
-          echo $JKS > encoded.key
-          cat encoded.key | base64 -d > upload-keystore.jks
+          echo $JKS | base64 - d > upload-keystore.jks
           echo $GPSA > gpsa.json
           echo KPROP > key.properties
 
