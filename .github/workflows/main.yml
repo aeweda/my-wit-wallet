@@ -211,7 +211,7 @@ jobs:
         working-directory: android
         env:
           PGP: ${{ secrets.ANDROID_PGP_KEY }}
-          PHRASE: ${{ secrets.ANDROID_PGP_KEY_PHRASE }}
+          PHRASE: ${{ secrets.ANDROID_PGP_KEY_PASSPHRASE }}
           GPSA: ${{ secrets.ANDROID_GOOGLE_PLAY_KEY }}
           KPROP: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
