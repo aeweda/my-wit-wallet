@@ -215,10 +215,11 @@ jobs:
           GPSA: ${{ secrets.ANDROID_GOOGLE_PLAY_KEY }}
           KPROP: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
-          echo $PGP > release.keystore.asc
-          gpg -d --passphrase "$PHRASE" --batch release.keystore.asc > upload-keystore.jks
-          echo $GPSA > gpsa.json
-          echo $KPROP > key.properties
+          echo "$PGP" > upload-keystore.jks.asc
+          cat upload-keystore.jks.asc
+          gpg -d --passphrase "$PHRASE" --batch upload-keystore.jks.asc > upload-keystore.jks
+          echo "$GPSA" > gpsa.json
+          echo "$KPROP" > key.properties
 
       - name: Add Beta Badge for Dev Releases
         run: |
