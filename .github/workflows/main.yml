@@ -217,7 +217,7 @@ jobs:
           echo $JKS > encoded.key
           base64 -d encoded.key > upload-keystore.jks
           echo $GPSA > gpsa.json
-          echo KPROP > key.properties
+          echo $KPROP > key.properties
 
       - name: Add Beta Badge for Dev Releases
         run: |
