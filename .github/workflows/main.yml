@@ -214,7 +214,7 @@ jobs:
       - name: Set Version
         run: |
           cd android
-          ./set-version-code.sh
+          export VCODE=$(bundle exec fastlane vcode | grep -o 'VersionCode: [0-9]*$' | grep -o '[0-9]*$')
           cd ..
           sed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" pubspec.yaml
           cat pubspec.yaml
