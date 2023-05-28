@@ -172,6 +172,7 @@ jobs:
 
   Android:
     runs-on: ubuntu-22.04
+    environment: Release
     steps:
       - name: Clone
         uses: actions/checkout@v3
@@ -206,6 +207,17 @@ jobs:
       - name: Flutter Doctor
         run: flutter doctor
 
+      - name: Add Credentials / Keys
+        working-directory: android
+        env:
+          JKS: ${{ secrets.ANDROID_JKS_KEY }}
+          GPSA: ${{ secrets.ANDROID_GOOGLE_PLAY_KEY }}
+          KPROP: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: |
+          echo $JKS | base64 -d > upload-keystore.jks
+          echo $GPSA > gpsa.json
+          echo KPROP > key.properties
+
       - name: Add Beta Badge for Dev Releases
         run: |
           if [[ "${{github.ref_name}}" == *"dev"* ]]; then export DEV=true; else export DEV=false; fi;
@@ -213,10 +225,8 @@ jobs:
 
       - name: Set Version
         run: |
-          cd android
-          export VCODE=$(bundle exec fastlane vcode | grep -o 'VersionCode: [0-9]*$' | grep -o '[0-9]*$')
-          cd ..
-          sed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" pubspec.yaml
+          cd android && export VCODE=$(bundle exec fastlane vcode | grep -o 'VersionCode: [0-9]*$' | grep -o '[0-9]*$')
+          cd .. && sed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" pubspec.yaml
           cat pubspec.yaml
 
       - name: Binary (appbundle)
