@@ -231,7 +231,7 @@ jobs:
           cat pubspec.yaml
 
       - name: Binary (appbundle)
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --scan
 
       - name: Binary (apk)
         run: flutter build apk --release
