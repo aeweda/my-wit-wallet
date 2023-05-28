@@ -215,7 +215,7 @@ jobs:
           KPROP: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
           echo $JKS > encoded.key
-          cat encoded.key | base64 -d > upload-keystore.jks
+          base64 -d encoded.key > upload-keystore.jks
           echo $GPSA > gpsa.json
           echo KPROP > key.properties
 
