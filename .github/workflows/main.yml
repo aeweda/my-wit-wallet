@@ -216,7 +216,7 @@ jobs:
           GPSA: ${{ secrets.ANDROID_GOOGLE_PLAY_KEY }}
           KPROP: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
-          echo $JKS | base64 - d > upload-keystore.jks
+          echo $JKS | base64 -d > upload-keystore.jks
           echo $GPSA > gpsa.json
           echo KPROP > key.properties
 
