@@ -291,9 +291,6 @@ jobs:
           bundler-cache: true
           working-directory: 'ios'
 
-      - name: Setup Cocoapods
-        run: gem install cocoapods
-
       - name: Flutter Doctor
         run: flutter doctor
 
@@ -301,6 +298,7 @@ jobs:
         run: flutter pub get
 
       - name: Install Cocoapods
+        working-directory: ios
         run: pod install
 
       - name: Add Credentials / Keys
