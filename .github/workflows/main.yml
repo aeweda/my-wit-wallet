@@ -292,7 +292,9 @@ jobs:
           working-directory: 'ios'
 
       - name: Flutter Doctor
-        run: flutter doctor
+        run: |
+          flutter --disable-telemetry
+          flutter doctor
 
       - name: Install Project Dependencies
         run: flutter pub get
@@ -322,6 +324,7 @@ jobs:
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_AASP}}
         run: |
           brew install gnu-sed
+          gsed -i "s/TEAM_ID/$TEAM_ID/g" ./export_options.plist
           gsed -i "s/SENSITIVE_REPLACE_ME/$TEAM_ID/g" ./Runner.xcodeproj/project.pbxproj
           bundle exec fastlane setup
 
@@ -330,7 +333,6 @@ jobs:
         run: |
           export VCODE=$(bundle exec fastlane vcode | grep -o 'VersionCode: [0-9]*$' | grep -o '[0-9]*$')
           gsed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" ../pubspec.yaml
-          cat ../pubspec.yaml
 
       - name: Binary(ipa)
         run: flutter build ipa --release --export-options-plist=./ios/export_options.plist
