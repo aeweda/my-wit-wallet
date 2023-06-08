@@ -329,7 +329,7 @@ jobs:
         working-directory: ios
         run: |
           export VCODE=$(bundle exec fastlane vcode | grep -o 'VersionCode: [0-9]*$' | grep -o '[0-9]*$')
-          sed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" ../pubspec.yaml
+          gsed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" ../pubspec.yaml
           cat pubspec.yaml
 
       - name: Binary(ipa)
