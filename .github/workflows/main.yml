@@ -311,7 +311,8 @@ jobs:
           FASTLANE_USERNAME: ${{ secrets.FASTLANE_USERNAME }}
           FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_AASP}}
         run: |
-          sed -i "s/SENSITIVE_REPLACE_ME/$TEAM_ID/g" ./Runner.xcodeproj/project.pbxproj
+          brew install gnu-sed
+          gsed -i "s/SENSITIVE_REPLACE_ME/$TEAM_ID/g" ./Runner.xcodeproj/project.pbxproj
           bundle exec fastlane setup
 
       - name: Set Version
