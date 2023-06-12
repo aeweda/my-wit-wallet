@@ -134,7 +134,6 @@ jobs:
           IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
         run: codesign --verify -vvvv ./build/macos/Build/Products/Release/myWitWallet.app
 
-
       - name: Create .dmg
         run: |
           brew install create-dmg
@@ -232,14 +231,13 @@ jobs:
 
       - name: Add Beta Badge for Dev Releases
         run: |
-          if [[ "${{github.ref_name}}" == *"dev"* ]]; then export DEV=true; else export DEV=false; fi;
-          if [[ "$DEV" == "true" ]]; then (cd android && ./beta_badge.sh); fi;
+          if [[ "${{github.ref_name}}" == *"dev"* ]]; then (cd android && ./beta_badge.sh); fi;
 
       - name: Set Version
+        working-directory: android
         run: |
-          cd android && export VCODE=$(bundle exec fastlane vcode | grep -o 'VersionCode: [0-9]*$' | grep -o '[0-9]*$')
-          cd .. && sed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" pubspec.yaml
-          cat pubspec.yaml
+          export VCODE=$(bundle exec fastlane vcode | grep -o 'VersionCode: [0-9]*$' | grep -o '[0-9]*$')
+          sed -i "s/0.0.0+0/${{github.ref_name}}+$VCODE/g" ../pubspec.yaml
 
       - name: Binary (appbundle)
         run: flutter build appbundle --release
@@ -254,9 +252,8 @@ jobs:
           subdirectory: 'android'
 
       - name: Release on Playstore
-        run: |
-          if [[ "${{github.ref_name}}" == *"dev"* ]]; then export DEV=true; else export DEV=false; fi;
-          if [[ "$DEV" == "true" ]]; then (cd android && bundle exec fastlane team); else (cd android && bundle exec fastlane production) fi;
+        working-directory: android
+        run: if [[ "${{github.ref_name}}" == *"dev"* ]]; then bundle exec fastlane beta; else bundle exec fastlane production fi;
 
       - name: Archive Build
         run: mv ./build/app/outputs/flutter-apk/app-release.apk ./myWitWallet.apk
@@ -337,7 +334,7 @@ jobs:
       - name: Binary(ipa)
         run: flutter build ipa --release --export-options-plist=./ios/export_options.plist
 
-      - name: Release on Playstore
+      - name: Release on App-Store
         working-directory: ios
         run: |
           if [[ "${{github.ref_name}}" == *"dev"* ]]; then bundle exec fastlane beta; else bundle exec fastlane production fi;
